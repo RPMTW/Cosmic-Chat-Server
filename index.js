@@ -10,7 +10,7 @@ io = sockets(server);
 
 const Discord = require('discord.js');
 const client = new Discord.Client()
-const log = new Discord.WebhookClient("832853964819136532", "aFO1hTRZsle1vUnVBCYIP6xWrXkSkelgNRSIe47bYs1URmRLafZPEiFzy6yb9DtdKWs-");
+const log = new Discord.WebhookClient("832853964819136532", process.env['WebHookToken']);
 
 let onlineCount = 0;
 
