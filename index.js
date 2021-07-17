@@ -7,12 +7,18 @@ const server = http.Server(app);
 const sockets = require('socket.io');
 io = sockets(server);
 
+let onlineCount = 0;
 
-io.on('connection', function (connection) {
-    connection.on('message', function(data) {
-        console.log('new message: ' + data); 
-        io.emit("broadcast", data);
-    });
+io.on('connection', function(socket) {
+  onlineCount++;
+
+  socket.on('message', function(data) {
+    console.log('new message: ' + data);
+    io.emit("broadcast", data);
+  });
+  socket.on('disconnect', () => {
+    onlineCount = (onlineCount < 0) ? 0 : onlineCount -= 1;
+  });
 });
 
 
