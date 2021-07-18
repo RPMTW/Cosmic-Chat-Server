@@ -15,11 +15,21 @@ const log = new Discord.WebhookClient("832853964819136532", process.env['WebHook
 let onlineCount = 0;
 
 require("./discord/init")(client, log)
-require("./discord/SendToGame")(client, io)
+
+client.on("message", async (msg) => {
+  if (msg.author.bot) return;
+  if (msg.channel.id === "831494456913428501") {
+    let data = { "Type": "Client", "Message": msg.content, "UserName": msg.author.tag, "IP": "" }
+    log.send(data);
+    io.emit("broadcast", data);
+  }
+});
 
 io.on('connection', function(socket) {
-  console.log(onlineCount)
   onlineCount++;
+  log.send(onlineCount);
+  client.user.setActivity(`宇宙通訊共有 ${onlineCount} 個人`, { type: 'WATCHING' })
+    .catch(console.error);
   try {
     socket.on('message', function(data) {
       console.log('new data: ' + data);
@@ -27,11 +37,15 @@ io.on('connection', function(socket) {
       let Message = JsonData.Message;
       let UserName = JsonData.UserName;
       let IP = JsonData.IP;
+
+      log.send(data);
+
       if (BanIp.includes(IP)) {
         data = `{\"Type\":\"Server\",\"Message\":\"Ban\",\"UserName\":\"${UserName}\",\"UUID\":\"${JsonData.UUID}\",\"IP\":\"${IP}\"}`
         io.emit("broadcast", data);
         return;
       };
+      
       require("./discord/SendMessage")("831494456913428501", client, `**<${UserName}>** ${Message}`)
       io.emit("broadcast", data);
     });
