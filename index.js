@@ -98,6 +98,7 @@ io.on('connection', function (socket) {
             log.send(data); //發送訊息到Discord後台
 
             require("./discord/SendMessage")("831494456913428501", client, Message, UUID, UserName); //發送訊息到Discord宇宙通訊頻道
+            data = `{\"Type\":\"${JsonData.Type}\",\"Message\":\"${await FormattingCodeToMD(Message)}\",\"UserName\":\"${UserName}\",\"UUID\":\"${UUID}\",\"IP\":\"${IP}\"}`;
             io.emit("broadcast", data); //推播訊息給客戶端
         });
         socket.on('disconnect', () => {
