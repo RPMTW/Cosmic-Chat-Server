@@ -79,7 +79,7 @@ io.on('connection', function (socket) {
             if (Swearing.includes(Message)) return log.send(`偵測到髒話，訊息內容 ${Message}，IP ${IP}，UUID ${UUID}， UserName ${UserName}`);
             // 防刷訊息
             if (TooManyRequests.hasOwnProperty(IP)) {
-                let t = TooManyRequests[ip];
+                let t = TooManyRequests[IP];
                 if ((new Date() - t["time"]) <= 2000) {
                     // 相差是否大於2s
                     if (++t["ViolationCount"] > 10) {
@@ -92,7 +92,7 @@ io.on('connection', function (socket) {
                 }
                 t["time"] = new Date();
             } else {
-                TooManyRequests[ip] = { "time": new Date(), "ViolationCount": 0 };
+                TooManyRequests[IP] = { "time": new Date(), "ViolationCount": 0 };
             }
 
             log.send(data); //發送訊息到Discord後台
