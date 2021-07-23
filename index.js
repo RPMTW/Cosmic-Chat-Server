@@ -9,22 +9,26 @@ const sockets = require('socket.io');
 io = sockets(server);
 
 const Discord = require('discord.js');
-const client = new Discord.Client()
+const client = new Discord.Client();
 const log = new Discord.WebhookClient("832853964819136532", process.env['WebHookToken']);
-const textByLine = fs.readFileSync("./Ban/not_message.txt").toString().split("\n")
+const Swearing = fs.readFileSync("./Ban/not_message.txt").toString().split("\n");
 
 let onlineCount = 0;
-let isready = false;
+let isReady = false;
 
-var AntiBrush = {}
+var TooManyRequests = {}
 
 require("./discord/init")(client, log)
+
+client.on('ready', () => {
+    isReady = true;
+})
 
 client.on("message", async (msg) => {
     if (msg.author.bot) return;
     if (msg.channel.id === "831494456913428501") {
         let data;
-        if (textByLine.includes(msg.content)) {
+        if (Swearing.includes(msg.content)) {
             // 防髒話系統
             return msg.delete()
         }
@@ -48,13 +52,9 @@ client.on("message", async (msg) => {
     }
 });
 
-client.on('ready', () => {
-    isready = true;
-})
-
 io.on('connection', function (socket) {
-    onlineCount++;
-    if (isready) {
+    onlineCount++; //增加連線數
+    if (isReady) {
         client.user.setActivity(`宇宙通訊共有 ${onlineCount} 個玩家`, { type: 'WATCHING' })
             .catch(console.error);
     }
@@ -67,22 +67,23 @@ io.on('connection', function (socket) {
             let UUID = JsonData.UUID;
             let IP = JsonData.IP;
 
-            // 確認
+            // 如果訊息無效則結束
             if (Message == null) return;
-            // in ban ip
+            // 如果該IP已經被Ban
             if (BanIp.includes(IP)) {
-                data = `{\"Type\":\"Server\",\"Message\":\"Ban\",\"UserName\":\"${UserName}\",\"UUID\":\"${UUID}\",\"IP\":\"${IP}\"}`
+                data = `{\"Type\":\"Server\",\"Message\":\"Ban\",\"UserName\":\"${UserName}\",\"UUID\":\"${UUID}\",\"IP\":\"${IP}\"}`;
                 return io.emit("broadcast", data);
             };
             // 防髒話
-            if (textByLine.includes(Message)) return console.warn(`\033[31mIP: ${IP} 訊息: ${Message}\033[0m]`);
-            // 防刷
-            if (AntiBrush.hasOwnProperty(IP)) {
-                let t = AntiBrush[ip];
-                if ((new Date() - new Date("2021-07-23T01:44:45.138Z")) <= 2e3) {
+            if (Swearing.includes(Message)) return log.send(`偵測到髒話，訊息內容 ${Message}，IP ${IP}，UUID ${UUID}， UserName ${UserName}`);
+            // 防刷訊息
+            if (TooManyRequests.hasOwnProperty(IP)) {
+                let t = TooManyRequests[ip];
+                if ((new Date() - t["time"]) <= 2000) {
                     // 相差是否大於2s
-                    if (++t["len"] > 10) {
-                        BanIp["IP"].push(IP);
+                    if (++t["ViolationCount"] > 10) {
+                        log.send(`偵測到發送訊息過快，訊息內容 ${Message}，IP ${IP}，UUID ${UUID}， UserName ${UserName}`);
+                        BanIp["IP"].push(IP); //將IP加入BanIP
                         fs.writeFile('./Ban/IP.json', JSON.stringify(BanIp, null, 4), error => {
                             if (error) console.log(error);
                         });
@@ -90,22 +91,21 @@ io.on('connection', function (socket) {
                 }
                 t["time"] = new Date();
             } else {
-                AntiBrush[ip] = { "time": new Date(), "len": 0 }
+                TooManyRequests[ip] = { "time": new Date(), "ViolationCount": 0 };
             }
 
-            log.send(data);
+            log.send(data); //發送訊息到Discord後台
 
-            require("./discord/SendMessage")("831494456913428501", client, Message, UUID, UserName)
-            io.emit("broadcast", data);
+            require("./discord/SendMessage")("831494456913428501", client, Message, UUID, UserName); //發送訊息到Discord宇宙通訊頻道
+            io.emit("broadcast", data); //推播訊息給客戶端
         });
         socket.on('disconnect', () => {
-            onlineCount = (onlineCount < 0) ? 0 : onlineCount -= 1;
+            onlineCount = (onlineCount < 0) ? 0 : onlineCount -= 1; //減少連線數
         });
     } catch (err) {
-        console.log(`\033[35m${err}\033[0m`)
+        console.log(`\033[35m${err}\033[0m`);
     }
 });
-
 
 server.listen(3000, function () {
     console.log('listening on 3000');
