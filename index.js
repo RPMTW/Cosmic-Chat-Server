@@ -72,7 +72,7 @@ io.on('connection', function (socket) {
             // in ban ip
             if (BanIp.includes(IP)) {
                 data = `{\"Type\":\"Server\",\"Message\":\"Ban\",\"UserName\":\"${UserName}\",\"UUID\":\"${UUID}\",\"IP\":\"${IP}\"}`
-                return io.emit("broadcas", data);
+                return io.emit("broadcast", data);
             };
             // 防髒話
             if (textByLine.includes(Message)) return console.warn(`\033[31mIP: ${IP} 訊息: ${Message}\033[0m]`);
