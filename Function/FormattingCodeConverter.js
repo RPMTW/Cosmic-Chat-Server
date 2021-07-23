@@ -22,12 +22,16 @@ function FormattingCodeToMD(source) {
                 return /\*{3}[^}]+\*{3}/g.test(str)
                     ? check(str, /\*{3}(.*)\*{3}/g, `§l§o$1§r${prefixes.join("")}`, [...prefixes, "§l§o"])
                     : /\*{2}[^]+\*{2}/g.test(str)
-                        ? check(str, /\*{2}(.*)\*{2}/g, `§l$1§r${prefixes.join("")}`, [...prefixes, "§l"])
-                        : check(str, /\*(.*)\*/g, `§o$1§r${prefixes.join("")}`, [...prefixes, "§o"])
+                        ? check(str, /\*{2}(.*)\*{2}/g, `§l$1§r${prefixes.join("")}`, [...prefixes, "§l"]) //粗體
+                        : check(str, /\*(.*)\*/g, `§o$1§r${prefixes.join("")}`, [...prefixes, "§o"]) //斜體
             case '~':
-                return check(str, /~{2}(.*)~{2}/g, `§m$1§r${prefixes.join("")}`, [...prefixes, "§m"])
+                return check(str, /~{2}(.*)~{2}/g, `§m$1§r${prefixes.join("")}`, [...prefixes, "§m"]) //刪除線
             case '_':
-                return check(str, /_{2}(.*)_{2}/g, `§n$1§r${prefixes.join("")}`, [...prefixes, "§n"])
+                return /\_{3}[^}]+\_{3}/g.test(str)
+                    ? check(str, /\_{3}(.*)\_{3}/g, `§l§o$1§r${prefixes.join("")}`, [...prefixes, "§o§§n"])
+                    : /\*{2}[^]+\*{2}/g.test(str)
+                        ? check(str, /\_{2}(.*)\_{2}/g, `§l$1§r${prefixes.join("")}`, [...prefixes, "§n"]) //底線
+                        : check(str, /\_(.*)\_/g, `§o$1§r${prefixes.join("")}`, [...prefixes, "§o"]) //斜體
             default:
                 return str;
         }
