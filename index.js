@@ -47,7 +47,6 @@ client.on('ready', () => {
 
 io.on('connection', function(socket) {
   onlineCount++;
-  log.send(onlineCount);
   if (isready) {
     client.user.setActivity(`宇宙通訊共有 ${onlineCount} 個玩家`, { type: 'WATCHING' })
       .catch(console.error);

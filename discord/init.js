@@ -4,4 +4,3 @@ module.exports = async(client,log) => {
     log.send(`${client.user.username} 登入成功`)
 })
 }
-
