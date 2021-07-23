@@ -4,7 +4,7 @@ MD轉換至Minecraft格式化代碼，由於Minecraft的格式化代碼不同於
 
 function FormattingCodeToMD(source) {
     let regex =
-        /(\*[^\*]+\*|\*{2}[^\*{2}]+\*{2}|\*{3}[^\*{3}]+\*{3}|~{2}[^~{2}]+~{2}|_{2}[^_{2}]+_{2})/g;
+        /(\*[^\*]+\*|\*{2}[^\*{2}]+\*{2}|\*{3}[^\*{3}]+\*{3}|~{2}[^~{2}]+~{2}|\_[^\_]+\_|\_{2}[^\_{2}]+\_{2}|\_{3}[^\_{3}]+\_{3})/g;
     let CAS = (str, prefixes) => {
         let test = (text) => regex.test(text);
         let check = (text, regex, template, prefixes) => {
@@ -28,9 +28,9 @@ function FormattingCodeToMD(source) {
                 return check(str, /~{2}(.*)~{2}/g, `§m$1§r${prefixes.join("")}`, [...prefixes, "§m"]) //刪除線
             case '_':
                 return /\_{3}[^}]+\_{3}/g.test(str)
-                    ? check(str, /\_{3}(.*)\_{3}/g, `§l§o$1§r${prefixes.join("")}`, [...prefixes, "§o§§n"])
+                    ? check(str, /\_{3}(.*)\_{3}/g, `§o§n$1§r${prefixes.join("")}`, [...prefixes, "§o§n"])
                     : /\_{2}[^]+\_{2}/g.test(str)
-                        ? check(str, /\_{2}(.*)\_{2}/g, `§l$1§r${prefixes.join("")}`, [...prefixes, "§n"]) //底線
+                        ? check(str, /\_{2}(.*)\_{2}/g, `§n$1§r${prefixes.join("")}`, [...prefixes, "§n"]) //底線
                         : check(str, /\_(.*)\_/g, `§o$1§r${prefixes.join("")}`, [...prefixes, "§o"]) //斜體
             default:
                 return str;
