@@ -1,7 +1,7 @@
 const express = require('express');
 const app = express();
 const fs = require('fs');
-const BanIp = JSON.parse(fs.readFileSync("./Ban/IP.json")).IP;
+const BanIp = JSON.parse(fs.readFileSync("./Ban/IP.json"));
 const http = require('http');
 const server = http.Server(app);
 
