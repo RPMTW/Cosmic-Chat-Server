@@ -27,7 +27,11 @@ function FormattingCodeToMD(source) {
             case '~':
                 return check(str, /~{2}(.*)~{2}/g, `§m$1§r${prefixes.join("")}`, [...prefixes, "§m"]) //刪除線
             case '_':
-                return check(str, /_{2}(.*)_{2}/g, `§n$1§r${prefixes.join("")}`, [...prefixes, "§n"]) //底線
+                return /\_{3}[^}]+\_{3}/g.test(str)
+                    ? check(str, /\_{3}(.*)\_{3}/g, `§o§n$1§r${prefixes.join("")}`, [...prefixes, "§o§n"])
+                    : /\_{2}[^]+\_{2}/g.test(str)
+                        ? check(str, /\_{2}(.*)\_{2}/g, `§n$1§r${prefixes.join("")}`, [...prefixes, "§n"]) //底線
+                        : check(str, /\_(.*)\_/g, `§o$1§r${prefixes.join("")}`, [...prefixes, "§o"]) //斜體
             default:
                 return str;
         }
