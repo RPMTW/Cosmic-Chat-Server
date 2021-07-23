@@ -12,6 +12,7 @@ const Discord = require('discord.js');
 const client = new Discord.Client();
 const log = new Discord.WebhookClient("832853964819136532", process.env['WebHookToken']);
 const Swearing = fs.readFileSync("./Ban/not_message.txt").toString().split("\n");
+const { FormattingCodeToMD } = require("./Function/FormattingCodeConverter");
 
 let onlineCount = 0;
 let isReady = false;
@@ -45,7 +46,7 @@ client.on("message", async (msg) => {
             })
                 .catch(console.error);
         } else {
-            data = { "Type": "Client", "Message": msg.content, "UserName": msg.author.tag, "IP": "" }
+            data = { "Type": "Client", "Message": await FormattingCodeToMD(msg.content), "UserName": msg.author.tag, "IP": "" }
             log.send(data);
             io.emit("broadcast", data);
         }
