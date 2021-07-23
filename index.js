@@ -104,7 +104,7 @@ io.on('connection', function (socket) {
             onlineCount = (onlineCount < 0) ? 0 : onlineCount -= 1; //減少連線數
         });
     } catch (err) {
-        console.log(`\033[35m${err}\033[0m`);
+        console.log(err);
     }
 });
 
