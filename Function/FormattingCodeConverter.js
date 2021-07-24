@@ -1,43 +1,105 @@
-/*
-MD轉換至Minecraft格式化代碼，由於Minecraft的格式化代碼不同於MD的格式化代碼，因此需要轉換，由3X0DUS - ChAoS#6969提供
-*/
+function FormattingCodeToMD(src) {
+    let result = ""
+    let types = ["*", "_", "~"]
+    let check = false
 
-function FormattingCodeToMD(source) {
-    let regex =
-        /(\*[^\*]+\*|\*{2}[^\*{2}]+\*{2}|\*{3}[^\*{3}]+\*{3}|~{2}[^~{2}]+~{2}|\_[^\_]+\_|\_{2}[^\_{2}]+\_{2}|\_{3}[^\_{3}]+\_{3})/g;
-    let CAS = (str, prefixes) => {
-        let test = (text) => regex.test(text);
-        let check = (text, regex, template, prefixes) => {
-            let s = text.replace(regex, template);
-
-            if (test(s)) {
-                return CAS(s, prefixes);
-            } else {
-                return s;
-            }
-        };
-
-        switch (str.match(regex)[0][0]) {
-            case '*':
-                return /\*{3}[^}]+\*{3}/g.test(str)
-                    ? check(str, /\*{3}(.*)\*{3}/g, `§l§o$1§r${prefixes.join("")}`, [...prefixes, "§l§o"])
-                    : /\*{2}[^]+\*{2}/g.test(str)
-                        ? check(str, /\*{2}(.*)\*{2}/g, `§l$1§r${prefixes.join("")}`, [...prefixes, "§l"]) //粗體
-                        : check(str, /\*(.*)\*/g, `§o$1§r${prefixes.join("")}`, [...prefixes, "§o"]) //斜體
-            case '~':
-                return check(str, /~{2}(.*)~{2}/g, `§m$1§r${prefixes.join("")}`, [...prefixes, "§m"]) //刪除線
-            case '_':
-                return /\_{3}[^}]+\_{3}/g.test(str)
-                    ? check(str, /\_{3}(.*)\_{3}/g, `§o§n$1§r${prefixes.join("")}`, [...prefixes, "§o§n"])
-                    : /\_{2}[^]+\_{2}/g.test(str)
-                        ? check(str, /\_{2}(.*)\_{2}/g, `§n$1§r${prefixes.join("")}`, [...prefixes, "§n"]) //底線
-                        : check(str, /\_(.*)\_/g, `§o$1§r${prefixes.join("")}`, [...prefixes, "§o"]) //斜體
-            default:
-                return str;
+    let asteriskItalic = false // *
+    let asteriskStrong = false // **
+    let underlineItalic = false // _
+    let underlineStrong = false // __
+    let strikeThrough = false // ~~
+    let checkAll = () => {
+        if (!(asteriskItalic && asteriskStrong && underlineItalic && underlineStrong && strikeThrough)) {
+            result += "§r"
         }
-    };
-    let msg = source.replace(regex, (_, str) => CAS(str, []));
-    return msg;
+    }
+    for (i in src) {
+        if (check) {
+            check = !check
+            continue
+        }
+        let next = src.charAt(parseInt(i) + 1)
+        let ord = src.charAt(parseInt(i) - 1)
+        let nowStr = src.charAt(i)
+        if (nowStr == "\\" && ord != "\\") {
+            if (!(types.includes(next) || types.includes(ord))) {
+                result += nowStr
+            }
+        } else if (!types.includes(nowStr)) {
+            result += nowStr
+        } else if (nowStr == "*" && ord != "\\") {
+            if (next == "*") {
+                if (src.substring(parseInt(i) + 1).indexOf("**") != -1) {
+                    result += "§l"
+                    check = true
+                    asteriskStrong = true
+                    continue
+                } else if (asteriskStrong) {
+                    check = true
+                    asteriskStrong = false
+                    checkAll()
+                    continue
+                }
+                result += nowStr
+            } else {
+                if (src.substring(parseInt(i) + 1).indexOf("*") != -1) {
+                    result += "§o"
+                    check = true
+                    asteriskItalic = true
+                    continue
+                } else if (asteriskItalic) {
+                    check = true
+                    asteriskItalic = false
+                    checkAll()
+                    continue
+                }
+                result += nowStr
+            }
+        } else if (nowStr == "_" && ord != "\\") {
+            if (next == "_") {
+                if (src.substring(parseInt(i) + 1).indexOf("__") != -1) {
+                    result += "§n"
+                    check = true
+                    underlineStrong = true
+                    continue
+                } else if (underlineStrong) {
+                    check = true
+                    underlineStrong = false
+                    checkAll()
+                    continue
+                }
+                result += nowStr
+            } else {
+                if (src.substring(parseInt(i) + 1).indexOf("_") != -1) {
+                    result += "§o"
+                    check = true
+                    underlineItalic = true
+                } else if (underlineItalic) {
+                    check = true
+                    underlineItalic = false
+                    checkAll()
+                    continue
+                }
+                result += nowStr
+            }
+        } else if (nowStr == "~" && next == "~" && ord != "\\") {
+            if (src.substring(parseInt(i) + 1).indexOf("~~") != -1) {
+                result += "§m"
+                check = true
+                strikeThrough = true
+                continue
+            } else if (strikeThrough) {
+                check = true
+                strikeThrough = false
+                checkAll()
+                continue
+            }
+            result += nowStr
+        } else {
+            result += nowStr
+        }
+    }
+    return result
 }
 
-exports.FormattingCodeToMD = FormattingCodeToMD;
+exports.FormattingCodeToMD = FormattingCodeToMD
