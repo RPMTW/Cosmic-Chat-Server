@@ -1,3 +1,7 @@
+/*
+MD轉換至Minecraft格式化代碼，由猴子#3807提供
+*/
+
 function FormattingCodeToMD(src) {
     let result = ""
     let types = ["*", "_", "~"]
