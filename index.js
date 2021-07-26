@@ -32,7 +32,7 @@ client.on("message", async (msg) => {
       // 防髒話系統
       return msg.delete()
     }
-  let MDMsg = await FormattingCodeToMD(msg.content);
+    let MDMsg = await FormattingCodeToMD(msg.content);
     if (msg.reference) {
       //如果該訊息是回覆的訊息
       msg.channel.messages.fetch(msg.reference.messageID).then(message => {
@@ -40,7 +40,11 @@ client.on("message", async (msg) => {
         if (tag === msg.author.tag) {
           tag = "自己"
         }
-        let data = { "Type": "Client", "Message": `§a回覆 §6${tag} §b${message.content} §a-> §f${MDMsg}`, "UserName": msg.author.tag, "IP": "" }
+        if (tag === "菘菘#8663" || tag === "SiongSng") {
+          tag = "§bRPMTW維護者";
+        }
+        let MDMessage = FormattingCodeToMD(message.content);
+        let data = { "Type": "Client", "Message": `§a回覆 §6${tag} §b${MDMessage} §a-> §f${MDMsg}`, "UserName": msg.author.tag, "IP": "" }
         io.emit("broadcast", data);
       })
         .catch(console.error);
