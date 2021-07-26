@@ -32,6 +32,7 @@ client.on("message", async (msg) => {
       // 防髒話系統
       return msg.delete()
     }
+  let MDMsg = await FormattingCodeToMD(msg.content);
     if (msg.reference) {
       //如果該訊息是回覆的訊息
       msg.channel.messages.fetch(msg.reference.messageID).then(message => {
@@ -39,12 +40,12 @@ client.on("message", async (msg) => {
         if (tag === msg.author.tag) {
           tag = "自己"
         }
-        let data = { "Type": "Client", "Message": `§a回覆 §6${tag} §b${message.content} §a-> §f${msg.content}`, "UserName": msg.author.tag, "IP": "" }
+        let data = { "Type": "Client", "Message": `§a回覆 §6${tag} §b${message.content} §a-> §f${MDMsg}`, "UserName": msg.author.tag, "IP": "" }
         io.emit("broadcast", data);
       })
         .catch(console.error);
     } else {
-      let data = { "Type": "Client", "Message": await FormattingCodeToMD(msg.content), "UserName": msg.author.tag, "IP": "" }
+      let data = { "Type": "Client", "Message": MDMsg, "UserName": msg.author.tag, "IP": "" }
       io.emit("broadcast", data);
     }
   }
@@ -92,7 +93,7 @@ io.on('connection', function(socket) {
         TooManyRequests[IP] = { "time": new Date(), "ViolationCount": 0 };
       }
 
-      log.send(data); //發送訊息到Discord後台
+      log.send(`\`\`\`json\n${data}\`\`\``); //發送訊息到Discord後台
 
       require("./discord/SendMessage")("831494456913428501", client, Message, UUID, UserName); //發送訊息到Discord宇宙通訊頻道
       data = `{\"Type\":\"Client\",\"Message\":\"${FormattingCodeToMD(Message)}\",\"UserName\":\"${UserName}\",\"UUID\":\"${UUID}\",\"IP\":\"${IP}\"}`;

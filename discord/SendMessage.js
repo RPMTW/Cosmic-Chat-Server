@@ -7,7 +7,7 @@ module.exports = async (ChannelID, client, Msg, UUID, UserName) => {
     const webhook = webhooks.first();
     webhook.send(Msg, {
       username: UserName, //玩家名稱
-      avatarURL: `https://crafatar.com/avatars/${UUID}` //Skin圖片網址
+      avatarURL: `https://minotar.net/helm/${UUID}/40.png` //Skin圖片網址
     });
   } catch (error) {
     console.error('Error trying to send: ', error);
