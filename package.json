@@ -12,6 +12,7 @@
   "dependencies": {
     "discord.js": "",
     "express": "^4.17.1",
+    "node-fetch": "^2.6.1",
     "socket.io": "^4.0.0"
   }
 }
