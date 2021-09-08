@@ -4,14 +4,17 @@ const fs = require('fs');
 const BanUUID = JSON.parse(fs.readFileSync("./Ban/UUID.json"));
 const http = require('http');
 const server = http.Server(app);
-
 const sockets = require('socket.io');
 io = sockets(server);
-
+const Redis = require('ioredis');
 const Discord = require('discord.js');
 const client = new Discord.Client();
+
+const { RateLimiterMemory } = require('rate-limiter-flexible');
+
 const log = new Discord.WebhookClient("832853964819136532", process.env['WebHookToken']);
 const Swearing = fs.readFileSync("./Ban/not_message.txt").toString().split("\n");
+
 const { FormattingCodeToMD } = require("./Function/FormattingCodeConverter");
 const { MojangAuth } = require("./Function/MojangAuth");
 const { MSAuth } = require("./Function/MSAuth");
@@ -21,8 +24,21 @@ let isReady = false;
 
 var TooManyRequests = {}
 
+app.get('/', function(req, res) {
+  res.json({
+    code:200,
+    message:"Hello RPMTW World"
+  });
+});
+
 require("./discord/init")(client, log)
 
+const rateLimiter = new RateLimiterMemory(
+  {
+    points: 5,
+    duration: 1,
+  });
+  
 client.on('ready', () => {
   isReady = true;
 })
@@ -58,20 +74,23 @@ client.on("message", async (msg) => {
 });
 
 io.on('connection', async function(socket) {
+  console.log(onlineCount);
   const Token = socket.handshake.auth.Token;
   const UUID = socket.handshake.auth.UUID;
-  const AccountType = socket.handshake.auth.AccountType;
-  if (AccountType == undefined) return;
-  
-  console.log(AccountType);
-
-  const isAuth = AccountType == "MOJANG" ? await MojangAuth(Token) : await MSAuth(Token);
-
+   try {
+  await rateLimiter.consume(UUID);
+  }catch(rejRes) {
+   console.log("連線宇宙通訊伺服器超速");
+   return socket.disconnect();
+ }
+  if (Token == undefined || UUID == undefined) return socket.disconnect();
   onlineCount++; //增加連線數
+  const isAuth = await MojangAuth(Token) == true ? true : await MSAuth(Token);
   if (isReady) {
     client.user.setActivity(`宇宙通訊共有 ${onlineCount} 個玩家`, { type: 'WATCHING' })
       .catch(console.error);
   }
+
   try {
     socket.on('message', function(data) {
       console.log('new data: ' + data);
@@ -104,12 +123,12 @@ io.on('connection', async function(socket) {
 
         // 如果訊息無效則跳過處理
         if (Message == null) return;
+        if (Message == "@everyone") return;
 
         // 防髒話
         if (Swearing.includes(Message)) return log.send(`偵測到髒話，訊息內容 ${Message}，UUID ${UUID}， UserName ${UserName}`);
         // 防刷訊息
         if (TooManyRequests.hasOwnProperty(UUID)) {
-          console.log("test1");
           let t = TooManyRequests[UUID];
           if ((new Date() - t["time"]) <= 2000) {
             console.log("test2");

@@ -12,7 +12,9 @@
   "dependencies": {
     "discord.js": "",
     "express": "^4.17.1",
+    "ioredis": "^4.27.9",
     "node-fetch": "^2.6.1",
+    "rate-limiter-flexible": "^2.2.4",
     "socket.io": "^4.0.0"
   }
 }
