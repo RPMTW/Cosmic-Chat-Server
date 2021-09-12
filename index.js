@@ -12,17 +12,22 @@ const client = new Discord.Client();
 
 const { RateLimiterMemory } = require('rate-limiter-flexible');
 
-const log = new Discord.WebhookClient("832853964819136532", process.env['WebHookToken']);
+var webhookChannelId = "832853964819136532";
+var webhookToken = process.env['WebHookToken'];
+var msgChannelId = "831494456913428501";
+const log = new Discord.WebhookClient(webhookChannelId, webhookToken);
 const Swearing = fs.readFileSync("./Ban/not_message.txt").toString().split("\n");
 
 const { FormattingCodeToMD } = require("./Function/FormattingCodeConverter");
 const { MojangAuth } = require("./Function/MojangAuth");
 const { MSAuth } = require("./Function/MSAuth");
-
+const { HashUtil } = require("./Function/HashUtil");
+const utils = new HashUtil();
 let onlineCount = 0;
 let isReady = false;
 
-var TooManyRequests = {}
+var TooManyRequests = {};
+var userList = {};
 
 app.get('/', function(req, res) {
   res.json({
@@ -45,12 +50,13 @@ client.on('ready', () => {
 
 client.on("message", async (msg) => {
   if (msg.author.bot) return;
-  if (msg.channel.id === "831494456913428501") {
+  if (msg.channel.id === msgChannelId) {
     if (Swearing.includes(msg.content)) {
       // 防髒話系統
       return msg.delete()
     }
     let MDMsg = await FormattingCodeToMD(msg.content);
+  
     if (msg.reference) {
       //如果該訊息是回覆的訊息
       msg.channel.messages.fetch(msg.reference.messageID).then(message => {
@@ -62,6 +68,7 @@ client.on("message", async (msg) => {
           tag = "§bRPMTW維護者";
         }
         let MDMessage = FormattingCodeToMD(message.content);
+      
         let data = { "Type": "Client", "MessageType": "General", "Message": `§a回覆 §6${tag} §b${MDMessage} §a-> §f${MDMsg}`, "UserName": msg.author.tag }
         io.emit("broadcast", data);
       })
@@ -74,18 +81,29 @@ client.on("message", async (msg) => {
 });
 
 io.on('connection', async function(socket) {
-  console.log(onlineCount);
+
   const Token = socket.handshake.auth.Token;
   const UUID = socket.handshake.auth.UUID;
+  const chkSum =socket.handshake.auth.CS;
+
+  if (Token == undefined || UUID == undefined) return socket.disconnect();
+
+  console.log(`{ \n\tToken = ${Token}\n\tUUID = ${UUID}\n\tchkSum = ${chkSum}\n}`)
+  if(chkSum !== utils.GetHashString(Token+UUID)){
+    console.log("驗證失敗 拒絕連線");
+    return socket.disconnect();
+  }
+  console.log("驗證成功");
    try {
   await rateLimiter.consume(UUID);
   }catch(rejRes) {
    console.log("連線宇宙通訊伺服器超速");
    return socket.disconnect();
  }
-  if (Token == undefined || UUID == undefined) return socket.disconnect();
-  onlineCount++; //增加連線數
+
   const isAuth = await MojangAuth(Token) == true ? true : await MSAuth(Token);
+  onlineCount++; //增加連線數
+  console.log(`目前連線數: ${onlineCount}`);
   if (isReady) {
     client.user.setActivity(`宇宙通訊共有 ${onlineCount} 個玩家`, { type: 'WATCHING' })
       .catch(console.error);
@@ -147,7 +165,7 @@ io.on('connection', async function(socket) {
         }
 
         if (MessageType == "General") {
-          require("./discord/SendMessage")("831494456913428501", client, Message, UUID, UserName); //發送訊息到Discord宇宙通訊頻道
+          require("./discord/SendMessage")(msgChannelId, client, Message, UUID, UserName); //發送訊息到Discord宇宙通訊頻道
           data = { "Type": "Client", "MessageType": "General", "Message": FormattingCodeToMD(Message), "UserName": UserName };
           io.emit("broadcast", data); //推播訊息給遊戲客戶端
         }
@@ -157,6 +175,7 @@ io.on('connection', async function(socket) {
     });
     socket.on('disconnect', () => {
       onlineCount = (onlineCount < 0) ? 0 : onlineCount -= 1; //減少連線數
+      console.log(`目前連線數: ${onlineCount}`);
     });
   } catch (err) {
     console.log(err);
