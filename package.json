@@ -10,11 +10,22 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "discord.js": "",
+    "discord.js": "^13.2.0",
     "express": "^4.17.1",
     "ioredis": "^4.27.9",
     "node-fetch": "^2.6.1",
     "rate-limiter-flexible": "^2.2.4",
     "socket.io": "^4.0.0"
-  }
+  },
+  "devDependencies": {
+    "node": "^16.10.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/RPMTW/Cosmic-Chat-Server.git"
+  },
+  "bugs": {
+    "url": "https://github.com/RPMTW/Cosmic-Chat-Server/issues"
+  },
+  "homepage": "https://github.com/RPMTW/Cosmic-Chat-Server#readme"
 }

@@ -8,11 +8,12 @@ const sockets = require('socket.io');
 io = sockets(server);
 const Redis = require('ioredis');
 const Discord = require('discord.js');
-const client = new Discord.Client();
+const client = new Discord.Client({ intents: [Discord.Intents.FLAGS.GUILDS] });
 
 const { RateLimiterMemory } = require('rate-limiter-flexible');
 
-const log = new Discord.WebhookClient("832853964819136532", process.env['WebHookToken']);
+const log = new Discord.WebhookClient({ id: "832853964819136532", token: process.env['WebHookToken'] });
+
 const Swearing = fs.readFileSync("./Ban/not_message.txt").toString().split("\n");
 
 const { FormattingCodeToMD } = require("./Function/FormattingCodeConverter");
@@ -26,8 +27,8 @@ var TooManyRequests = {}
 
 app.get('/', function(req, res) {
   res.json({
-    code:200,
-    message:"Hello RPMTW World"
+    code: 200,
+    message: "Hello RPMTW World"
   });
 });
 
@@ -38,12 +39,13 @@ const rateLimiter = new RateLimiterMemory(
     points: 5,
     duration: 1,
   });
-  
-client.on('ready', () => {
+
+client.once('ready', () => {
   isReady = true;
 })
 
-client.on("message", async (msg) => {
+client.once("messageCreate", async (msg) => {
+  console.log(msg.content);
   if (msg.author.bot) return;
   if (msg.channel.id === "831494456913428501") {
     if (Swearing.includes(msg.content)) {
@@ -77,24 +79,26 @@ io.on('connection', async function(socket) {
   console.log(onlineCount);
   const Token = socket.handshake.auth.Token;
   const UUID = socket.handshake.auth.UUID;
-   try {
-  await rateLimiter.consume(UUID);
-  }catch(rejRes) {
-   console.log("連線宇宙通訊伺服器超速");
-   return socket.disconnect();
- }
+  try {
+    await rateLimiter.consume(UUID);
+  } catch (rejRes) {
+    console.log("連線宇宙通訊伺服器超速");
+    return socket.disconnect();
+  }
   if (Token == undefined || UUID == undefined) return socket.disconnect();
   onlineCount++; //增加連線數
-  const isAuth = await MojangAuth(Token) == true ? true : await MSAuth(Token);
+  const isAuth = true;
+  // await MojangAuth(Token) == true ? true : await MSAuth(Token);
   if (isReady) {
-    client.user.setActivity(`宇宙通訊共有 ${onlineCount} 個玩家`, { type: 'WATCHING' })
-      .catch(console.error);
+    client.user.setPresence({ activities: [{ name: `宇宙通訊共有 ${onlineCount} 個玩家`, type: 'WATCHING' }] });
   }
 
   try {
     socket.on('message', function(data) {
       console.log('new data: ' + data);
-      log.send(`\`\`\`json\n${data}\`\`\``); //發送訊息到Discord後台
+      let dcData = JSON.parse(data);
+      dcData.UUID = UUID;
+      log.send(`\`\`\`json\n${JSON.stringify(dcData)}\`\`\``); //發送訊息到Discord後台
       try {
         // 如果該使用者不是正版帳號
         if (!isAuth) {
