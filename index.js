@@ -6,9 +6,8 @@ const http = require('http');
 const server = http.Server(app);
 const sockets = require('socket.io');
 io = sockets(server);
-const Redis = require('ioredis');
 const Discord = require('discord.js');
-const client = new Discord.Client({ intents: [Discord.Intents.FLAGS.GUILDS] });
+const client = new Discord.Client({ intents: [Discord.Intents.FLAGS.GUILDS, Discord.Intents.FLAGS.GUILD_MESSAGES] });
 
 const { RateLimiterMemory } = require('rate-limiter-flexible');
 
@@ -19,13 +18,14 @@ const Swearing = fs.readFileSync("./Ban/not_message.txt").toString().split("\n")
 const { FormattingCodeToMD } = require("./Function/FormattingCodeConverter");
 const { MojangAuth } = require("./Function/MojangAuth");
 const { MSAuth } = require("./Function/MSAuth");
+const { MessageTypes } = require('discord.js/typings/enums');
 
 let onlineCount = 0;
 let isReady = false;
 
 var TooManyRequests = {}
 
-app.get('/', function(req, res) {
+app.get('/', function (req, res) {
   res.json({
     code: 200,
     message: "Hello RPMTW World"
@@ -44,16 +44,15 @@ client.once('ready', () => {
   isReady = true;
 })
 
-client.once("messageCreate", async (msg) => {
-  console.log(msg.content);
+client.on("messageCreate", async (msg) => {
   if (msg.author.bot) return;
   if (msg.channel.id === "831494456913428501") {
     if (Swearing.includes(msg.content)) {
       // 防髒話系統
-      return msg.delete()
+      return msg.delete();
     }
     let MDMsg = await FormattingCodeToMD(msg.content);
-    if (msg.reference) {
+    if (msg.type == MessageTypes.REPLY) {
       //如果該訊息是回覆的訊息
       msg.channel.messages.fetch(msg.reference.messageID).then(message => {
         let tag = message.author.tag;
@@ -75,7 +74,7 @@ client.once("messageCreate", async (msg) => {
   }
 });
 
-io.on('connection', async function(socket) {
+io.on('connection', async function (socket) {
   console.log(onlineCount);
   const Token = socket.handshake.auth.Token;
   const UUID = socket.handshake.auth.UUID;
@@ -94,7 +93,7 @@ io.on('connection', async function(socket) {
   }
 
   try {
-    socket.on('message', function(data) {
+    socket.on('message', function (data) {
       console.log('new data: ' + data);
       let dcData = JSON.parse(data);
       dcData.UUID = UUID;
@@ -167,6 +166,6 @@ io.on('connection', async function(socket) {
   }
 });
 
-server.listen(3000, function() {
+server.listen(3000, function () {
   console.log('listening on 3000');
 });
