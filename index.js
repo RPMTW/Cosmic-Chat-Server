@@ -1,4 +1,5 @@
 const express = require('express');
+const morgan = require("morgan")
 const app = express();
 const fs = require('fs');
 const BanUUID = JSON.parse(fs.readFileSync("./Ban/UUID.json"));
@@ -18,19 +19,21 @@ const Swearing = fs.readFileSync("./Ban/not_message.txt").toString().split("\n")
 const { FormattingCodeToMD } = require("./Function/FormattingCodeConverter");
 const { MojangAuth } = require("./Function/MojangAuth");
 const { MSAuth } = require("./Function/MSAuth");
-const { MessageTypes } = require('discord.js/typings/enums');
+const { UUIDAuth } = require("./Function/UUIDAuth");
 
 let onlineCount = 0;
 let isReady = false;
 
 var TooManyRequests = {}
 
-app.get('/', function (req, res) {
-  res.json({
-    code: 200,
-    message: "Hello RPMTW World"
+app
+  .use(morgan("dev"))
+  .get('/', function(req, res) {
+    res.json({
+      code: 200,
+      message: "Hello RPMTW World"
+    });
   });
-});
 
 require("./discord/init")(client, log)
 
@@ -52,9 +55,9 @@ client.on("messageCreate", async (msg) => {
       return msg.delete();
     }
     let MDMsg = await FormattingCodeToMD(msg.content);
-    if (msg.type == MessageTypes.REPLY) {
+    if (msg.type.toString() == "REPLY") {
       //如果該訊息是回覆的訊息
-      msg.channel.messages.fetch(msg.reference.messageID).then(message => {
+      msg.channel.messages.fetch(msg.reference.messageId).then(message => {
         let tag = message.author.tag;
         if (tag === msg.author.tag) {
           tag = "自己"
@@ -74,7 +77,7 @@ client.on("messageCreate", async (msg) => {
   }
 });
 
-io.on('connection', async function (socket) {
+io.on('connection', async function(socket) {
   console.log(onlineCount);
   const Token = socket.handshake.auth.Token;
   const UUID = socket.handshake.auth.UUID;
@@ -87,13 +90,17 @@ io.on('connection', async function (socket) {
   if (Token == undefined || UUID == undefined) return socket.disconnect();
   onlineCount++; //增加連線數
   const isAuth = true;
+  // await UUIDAuth(UUID);
   // await MojangAuth(Token) == true ? true : await MSAuth(Token);
+  if (!isAuth) {
+    console.log("偵測到盜版帳號");
+  }
   if (isReady) {
     client.user.setPresence({ activities: [{ name: `宇宙通訊共有 ${onlineCount} 個玩家`, type: 'WATCHING' }] });
   }
 
   try {
-    socket.on('message', function (data) {
+    socket.on('message', function(data) {
       console.log('new data: ' + data);
       let dcData = JSON.parse(data);
       dcData.UUID = UUID;
@@ -125,8 +132,16 @@ io.on('connection', async function (socket) {
         let MessageType = JsonData.MessageType;
 
         // 如果訊息無效則跳過處理
-        if (Message == null) return;
-        if (Message == "@everyone") return;
+        function isNull(str) {
+          if (str == null) return true;
+          if (str == "") return true;
+          var regu = "^[ ] $";
+          var re = new RegExp(regu);
+          return re.test(str);
+        }
+
+        if (isNull(Message)) return;
+        if (Message.includes("@everyone") || Message.includes("@here")) return;
 
         // 防髒話
         if (Swearing.includes(Message)) return log.send(`偵測到髒話，訊息內容 ${Message}，UUID ${UUID}， UserName ${UserName}`);
@@ -166,6 +181,6 @@ io.on('connection', async function (socket) {
   }
 });
 
-server.listen(3000, function () {
+server.listen(3000, function() {
   console.log('listening on 3000');
 });
